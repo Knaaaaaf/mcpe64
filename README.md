@@ -11,10 +11,11 @@ I've done some bad and pointless changes to the code so if someone could improve
 - [x] Fix sound
 - [x] Add sprinting
 - [x] Chat (semi working) and commands
+- [x] Implementing options 
 - [ ] Controller support
 - [ ] Minecraft server hosting
 - [ ] Android build support
-- [ ] Better F3
+- [x] Better F3
 - [ ] Performance optimalizations
 
 ## How to Build
