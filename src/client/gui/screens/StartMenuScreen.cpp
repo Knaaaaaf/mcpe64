@@ -190,6 +190,12 @@ void StartMenuScreen::render( int xm, int ym, float a )
 
 	drawString(font, version, versionPosX, 62, /*50,*/ 0xffcccccc);//0x666666);
 	drawString(font, copyright, copyrightPosX, height - 10, 0xffffff);
+	glEnable2(GL_BLEND);
+	glBlendFunc2(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glColor4f2(1, 1, 1, 1);
+	if (Textures::isTextureIdValid(minecraft->textures->loadAndBindTexture("gui/logo/github.png")))
+		blit(2, height - 10, 0, 0, 8, 8, 256, 256);
+	drawString(font, "mschiller890/mcpe64", 12, height - 10, 0xffcccccc);
 
 	Screen::render(xm, ym, a);
 }
@@ -209,6 +215,17 @@ void StartMenuScreen::_updateLicense()
 	} else {
 		bJoin.active = bHost.active = bOptions.active = false;
 	}
+}
+
+void StartMenuScreen::mouseClicked(int x, int y, int buttonNum) {
+	const int logoX = 2;
+	const int logoW = 8 + 2 + font->width("mschiller890/mcpe64");
+	const int logoY = height - 10;
+	const int logoH = 10;
+	if (x >= logoX && x <= logoX + logoW && y >= logoY && y <= logoY + logoH)
+		minecraft->platform()->openURL("https://github.com/mschiller890/mcpe64");
+	else
+		Screen::mouseClicked(x, y, buttonNum);
 }
 
 bool StartMenuScreen::handleBackEvent( bool isDown ) {
