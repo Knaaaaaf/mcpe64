@@ -878,22 +878,30 @@ void Minecraft::tickInput() {
 	
 	static bool prevMouseDownLeft = false;
 
-	// Destroy and attack is on same button
-	if (Mouse::isButtonDown(MouseAction::ACTION_LEFT)) {
-		auto baiFlags = BuildActionIntention::BAI_REMOVE | BuildActionIntention::BAI_ATTACK;
+	if (useTouchscreen()) {
+		// Touch: gesture recognizer classifies the action type (turn/destroy/build)
+		BuildActionIntention bai;
+		if (inputHolder && inputHolder->getBuildInput()->tickBuild(player, &bai)) {
+			handleBuildAction(&bai);
+		}
+	} else {
+		// Desktop: left mouse = destroy/attack
+		if (Mouse::isButtonDown(MouseAction::ACTION_LEFT)) {
+			auto baiFlags = BuildActionIntention::BAI_REMOVE | BuildActionIntention::BAI_ATTACK;
 
-		if (!prevMouseDownLeft) baiFlags |= BuildActionIntention::BAI_FIRSTREMOVE;
+			if (!prevMouseDownLeft) baiFlags |= BuildActionIntention::BAI_FIRSTREMOVE;
 
-		BuildActionIntention bai(baiFlags);
-		handleBuildAction(&bai);
-	}
+			BuildActionIntention bai(baiFlags);
+			handleBuildAction(&bai);
+		}
 
-	prevMouseDownLeft = Mouse::isButtonDown(MouseAction::ACTION_LEFT);
+		prevMouseDownLeft = Mouse::isButtonDown(MouseAction::ACTION_LEFT);
 
-	// Build and use/interact is on same button
-	if (Mouse::isButtonDown(MouseAction::ACTION_RIGHT)) {
-		BuildActionIntention bai(BuildActionIntention::BAI_BUILD | BuildActionIntention::BAI_INTERACT);
-		handleBuildAction(&bai);
+		// Build and use/interact is on same button
+		if (Mouse::isButtonDown(MouseAction::ACTION_RIGHT)) {
+			BuildActionIntention bai(BuildActionIntention::BAI_BUILD | BuildActionIntention::BAI_INTERACT);
+			handleBuildAction(&bai);
+		}
 	}
 
 	lastTickTime = getTimeMs();

@@ -142,6 +142,7 @@ void SimpleChooseLevelScreen::buttonClicked( Button* button )
 		minecraft->setScreen(new ProgressScreen());
 		hasChosen = true;
 	}
+
 }
 
 void SimpleChooseLevelScreen::keyPressed(int eventKey)
@@ -163,5 +164,5 @@ void SimpleChooseLevelScreen::keyboardNewChar(char inputChar)
 bool SimpleChooseLevelScreen::handleBackEvent(bool isDown) {
 	if (!isDown)
 		minecraft->screenChooser.setScreen(SCREEN_STARTMENU);
-	return true;
+	return true; 
 }

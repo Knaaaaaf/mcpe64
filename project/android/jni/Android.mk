@@ -249,7 +249,7 @@ LOCAL_SRC_FILES := ../../../src/main.cpp \
 ../../../src/world/level/tile/entity/FurnaceTileEntity.cpp \
 ../../../src/world/phys/HitResult.cpp
 
-LOCAL_CFLAGS := -Wno-psabi -DPLATFORM_ANDROID -DPRE_ANDROID23 -Wno-narrowing $(LOCAL_CFLAGS)
+LOCAL_CFLAGS := -DPLATFORM_ANDROID -DPRE_ANDROID23 -Wno-narrowing $(LOCAL_CFLAGS)
 LOCAL_CPPFLAGS := -std=c++11
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/../../../src
 

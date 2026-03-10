@@ -19,7 +19,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 # ── Paths ────────────────────────────────────────────────────
-$repo       = "C:\m"
+$repo       = $PSScriptRoot
 $apkbuild   = "C:\apkbuild"
 $ndk        = "C:\android-ndk-r14b"
 $sdkTools   = "$env:LOCALAPPDATA\Android\Sdk\build-tools\35.0.0"
@@ -28,6 +28,15 @@ $adb        = "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe"
 $keystore   = "$apkbuild\debug.keystore"
 $pkg        = "com.mojang.minecraftpe"
 
+# Auto-detect keytool from JAVA_HOME, then from common install locations
+$keytool = if ($env:JAVA_HOME) { "$env:JAVA_HOME\bin\keytool.exe" } else {
+    $found = Get-ChildItem "C:\Program Files\Java","C:\Program Files\Eclipse Adoptium" `
+        -Filter keytool.exe -Recurse -ErrorAction SilentlyContinue |
+        Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
+    if (-not $found) { throw "keytool not found. Set JAVA_HOME or install a JDK." }
+    $found
+}
+
 $jniDir     = "$repo\project\android\jni"
 $libSrc     = "$repo\project\android\libs\arm64-v8a\libminecraftpe.so"
 $libDst     = "$apkbuild\lib\arm64-v8a\libminecraftpe.so"
@@ -35,7 +44,7 @@ $manifest   = "$repo\project\android_java\AndroidManifest.xml"
 $res        = "$repo\project\android_java\res"
 $javaSrc    = "$repo\project\android_java\src"
 $stubsDir   = "$apkbuild\stubs"
-$rJava      = "$apkbuild\gen\com\mojang\minecraftpe\R.java"
+$rJava      = "$apkbuild\gen\R.java"
 $classesDir = "$apkbuild\classes"
 $dexOut     = "$apkbuild\classes.dex"
 $dataDir    = "$repo\data"
@@ -62,15 +71,17 @@ Write-Step "Bootstrap"
 
 New-Dir $apkbuild
 New-Dir "$apkbuild\lib\arm64-v8a"
-New-Dir "$apkbuild\gen\com\mojang\minecraftpe"
+New-Dir "$apkbuild\gen"
 New-Dir $stubsDir
 
 if (-not (Test-Path $keystore)) {
     Write-Host "  generating debug.keystore..."
-    & keytool -genkeypair -v `
+    $eap = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+    & $keytool -genkeypair `
         -keystore $keystore -storepass android -keypass android `
         -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 `
         -dname "CN=Android Debug,O=Android,C=US" 2>&1 | Out-Null
+    $ErrorActionPreference = $eap
     Assert-ExitCode "keytool"
     Write-Host "  keystore created"
 } else { Write-Host "  keystore OK" }
@@ -207,10 +218,16 @@ Write-Host "  stubs OK"
 # ── 1. NDK build ─────────────────────────────────────────────
 if (-not $NoCpp -and -not $NoBuild) {
     Write-Step "NDK build (arm64-v8a)"
-    Push-Location $jniDir
-    $env:NDK_MODULE_PATH = "$repo\project\lib_projects"
-    & "$ndk\ndk-build.cmd" NDK_PROJECT_PATH="$repo\project\android" APP_BUILD_SCRIPT="$jniDir\Android.mk" 2>&1 |
-        Where-Object { $_ -match "error:|libminecraftpe" }
+    # NDK r14b on Windows hits the 32K CreateProcess limit with long paths.
+    # Work around it by building through a short junction C:\m -> repo root.
+    $junctionBase = "C:\m"
+    if (-not (Test-Path $junctionBase)) {
+        & cmd.exe /c "mklink /J `"$junctionBase`" `"$repo`"" | Out-Null
+    }
+    Push-Location "$junctionBase\project\android\jni"
+    $env:NDK_MODULE_PATH = "$junctionBase\project\lib_projects"
+    & "$ndk\ndk-build.cmd" NDK_PROJECT_PATH="$junctionBase\project\android" APP_BUILD_SCRIPT="$junctionBase\project\android\jni\Android.mk" 2>&1 |
+        Where-Object { $_ -match "error:|warning:|libminecraftpe|In file included" }
     Pop-Location
     Assert-ExitCode "ndk-build"
     Copy-Item $libSrc $libDst -Force
@@ -234,8 +251,10 @@ if (-not $NoJava -and -not $NoBuild) {
 
     Remove-Item $classesDir -Recurse -Force -ea SilentlyContinue
     New-Dir $classesDir
-    $errors = & javac -source 8 -target 8 -cp $androidJar -d $classesDir @srcs 2>&1 |
+    $eap = $ErrorActionPreference; $ErrorActionPreference = "Continue"
+    $errors = & javac --release 8 -cp $androidJar -d $classesDir @srcs 2>&1 |
               Where-Object { $_ -match "error:" }
+    $ErrorActionPreference = $eap
     if ($errors) { Write-Host $errors -ForegroundColor Red; exit 1 }
     Write-Host "  javac OK"
 
