@@ -15,14 +15,14 @@ I've done some bad and pointless changes to the code so if someone could improve
 - [ ] Controller support
 - [ ] Minecraft server hosting
 - [x] Android build support
-    - [ ] Touch control improvements
+    - [x] Touch control improvements
     - [ ] Screen fixes
 - [x] Better F3
 - [ ] Performance optimalizations
 
 ## How to Build
 ### Android
-1. Download r14b Android NDK
+Download r14b Android NDK and run `build.ps1`:
 ```
 # Full build (NDK + Java + APK + install)
 C:\apkbuild\build.ps1
