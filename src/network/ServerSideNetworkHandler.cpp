@@ -261,6 +261,11 @@ void ServerSideNetworkHandler::onReady_ClientGeneration(const RakNet::RakNetGUID
 	SetTimePacket(level->getTime()).write(&bitStream);
 	rakPeer->Send(&bitStream, HIGH_PRIORITY, RELIABLE_ORDERED, 0, source, false);
 
+	// send adventure settings (includes showNameTags, etc.)
+	bitStream.Reset();
+	AdventureSettingsPacket(level->adventureSettings).write(&bitStream);
+	rakPeer->Send(&bitStream, HIGH_PRIORITY, RELIABLE_ORDERED, 0, source, false);
+
 	// send all pre-existing players to the new player
 	const PlayerList& players = level->players;
 	for (unsigned int i = 0; i < players.size(); i++) {
