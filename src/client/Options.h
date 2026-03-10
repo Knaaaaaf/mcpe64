@@ -208,19 +208,21 @@ public:
 		} else if (item == &Option::PIXELS_PER_MILLIMETER) {
 			 pixelsPerMillimeter = value;
 		}
-		notifyOptionUpdate(item, value);
-    }
+		notifyOptionUpdate(item, value);		save();    }
 	void set(const Option* item, int value) {
 		if(item == &Option::DIFFICULTY) {
 			difficulty = value;
+		} else if(item == &Option::GUI_SCALE) {
+			guiScale = value % 5;
 		}
 		notifyOptionUpdate(item, value);
+		save();
 	}
 
     void toggle(const Option* option, int dir) {
         if (option == &Option::INVERT_MOUSE)	invertYMouse = !invertYMouse;
         if (option == &Option::RENDER_DISTANCE) viewDistance = (viewDistance + dir) & 3;
-        if (option == &Option::GUI_SCALE)		guiScale = (guiScale + dir) & 3;
+        if (option == &Option::GUI_SCALE)		guiScale = (guiScale + dir) % 5;
         if (option == &Option::VIEW_BOBBING)	bobView = !bobView;
 		if (option == &Option::THIRD_PERSON)	thirdPersonView = !thirdPersonView;
 		if (option == &Option::HIDE_GUI)		hideGui = !hideGui;
@@ -250,6 +252,7 @@ public:
 
 	int getIntValue(const Option* item) {
 		if(item == &Option::DIFFICULTY) return difficulty;
+		if(item == &Option::GUI_SCALE) return guiScale;
 		return 0;
 	}
 

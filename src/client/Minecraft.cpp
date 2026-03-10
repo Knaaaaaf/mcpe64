@@ -1148,24 +1148,37 @@ void Minecraft::setSize(int w, int h) {
 	width  = w;
 	height = h;
 
-	if (width >= 1000) {
+	// determine gui scale, optionally overriding auto
+	if (options.guiScale != 0) {
+		// manual selection: 1->small, 2->normal, 3->large, 4->larger
+		switch (options.guiScale) {
+		case 1: Gui::GuiScale = 2.0f; break;
+		case 2: Gui::GuiScale = 3.0f; break;
+		case 3: Gui::GuiScale = 4.0f; break;
+		case 4: Gui::GuiScale = 5.0f; break; // bigger than large
+		default: Gui::GuiScale = 1.0f; break; // auto
+		}
+	} else {
+		// auto compute from resolution
+		if (width >= 1000) {
         #ifdef __APPLE__
             Gui::GuiScale = (width > 2000)? 8.0f : 4.0f;
         #else
             Gui::GuiScale = 4.0f;
         #endif
     }
-	else if (width >= 800) {
+		else if (width >= 800) {
 #ifdef __APPLE__
         Gui::GuiScale = 4.0f;
 #else
 		Gui::GuiScale = 3.0f;
 #endif
     }
-	else if (width >= 400)
-		Gui::GuiScale = 2.0f;
-	else
-		Gui::GuiScale = 1.0f;
+		else if (width >= 400)
+			Gui::GuiScale = 2.0f;
+		else
+			Gui::GuiScale = 1.0f;
+	}
 
 	Gui::InvGuiScale = 1.0f / Gui::GuiScale;
 	int screenWidth  = (int)(width  * Gui::InvGuiScale);
@@ -1533,5 +1546,8 @@ void Minecraft::optionUpdated( const Options::Option* option, float value ) {
 }
 
 void Minecraft::optionUpdated( const Options::Option* option, int value ) {
-
+    if(option == &Options::Option::GUI_SCALE) {
+        // reapply screen scaling using current window size
+        setSize(width, height);
+    }
 }

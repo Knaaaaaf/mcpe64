@@ -68,5 +68,32 @@ void OptionsGroup::createProgressSlider( const Options::Option* option, Minecraf
 }
 
 void OptionsGroup::createStepSlider( const Options::Option* option, Minecraft* minecraft ) {
-
+	// integer-valued option; use step slider
+	std::vector<int> steps;
+	if(option == &Options::Option::RENDER_DISTANCE) {
+		for(int i = 0; i < 16; ++i) steps.push_back(i);
+	} else if(option == &Options::Option::DIFFICULTY) {
+		steps.push_back(0);
+		steps.push_back(1);
+		steps.push_back(2);
+		steps.push_back(3);
+	} else if(option == &Options::Option::GUI_SCALE) {
+		// slider order: small,normal,large,larger,auto
+		steps.push_back(1);
+		steps.push_back(2);
+		steps.push_back(3);
+		steps.push_back(4);
+		steps.push_back(0);
+	} else {
+		// fallback: use single value; duplicate so numSteps>1 and avoid divide-by-zero
+		steps.push_back(0);
+		steps.push_back(0);
+	}
+	Slider* element = new Slider(minecraft, option, steps);
+	element->width = 100;
+	element->height = 20;
+	std::string itemLabel = I18n::get(option->getCaptionId());
+	OptionsItem* item = new OptionsItem(itemLabel, element);
+	addChild(item);
+	setupPositions();
 }

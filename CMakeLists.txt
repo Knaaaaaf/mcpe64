@@ -140,6 +140,7 @@ endif()
 list(APPEND SOURCES
     "src/client/gui/screens/ConsoleScreen.cpp"
     "src/client/gui/screens/UsernameScreen.cpp"
+    "src/client/gui/screens/CreditsScreen.cpp"
 )
 
 add_executable(${PROJECT_NAME} 

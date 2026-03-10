@@ -751,6 +751,70 @@ void Gui::renderOnSelectItemNameText( const int screenWidth, Font* font, int ySl
 	}
 }
 
+
+
+// helper structure used by drawColoredString
+struct ColorSegment {
+    std::string text;
+    uint32_t color;
+};
+
+// parse [tag] and [/tag] markers; tags may contain a color name (gold, green, etc.)
+static void parseColorTags(const std::string& in, std::vector<ColorSegment>& out) {
+    uint32_t curColor = 0xffffff;
+    size_t pos = 0;
+    while (pos < in.size()) {
+        size_t open = in.find('[', pos);
+        if (open == std::string::npos) {
+            out.push_back({in.substr(pos), curColor});
+            break;
+        }
+        if (open > pos) {
+            out.push_back({in.substr(pos, open - pos), curColor});
+        }
+        size_t close = in.find(']', open);
+        if (close == std::string::npos) {
+            out.push_back({in.substr(open), curColor});
+            break;
+        }
+        std::string tag = in.substr(open + 1, close - open - 1);
+        if (!tag.empty() && tag[0] == '/') {
+            curColor = 0xffffff;
+        } else {
+            std::string lower;
+            lower.resize(tag.size());
+            std::transform(tag.begin(), tag.end(), lower.begin(), ::tolower);
+            if (lower.find("gold") != std::string::npos) curColor = 0xffd700;
+            else if (lower.find("green") != std::string::npos) curColor = 0x00ff00;
+            else if (lower.find("yellow") != std::string::npos) curColor = 0xffff00;
+            else if (lower.find("red") != std::string::npos) curColor = 0xff0000;
+            else if (lower.find("blue") != std::string::npos) curColor = 0x0000ff;
+        }
+        pos = close + 1;
+    }
+}
+
+void Gui::drawColoredString(Font* font, const std::string& text, float x, float y, int alpha) {
+    std::vector<ColorSegment> segs;
+    parseColorTags(text, segs);
+    float cx = x;
+    for (auto &s : segs) {
+        int color = s.color + (alpha << 24);
+        font->drawShadow(s.text, cx, y, color);
+        cx += font->width(s.text);
+    }
+}
+
+float Gui::getColoredWidth(Font* font, const std::string& text) {
+    std::vector<ColorSegment> segs;
+    parseColorTags(text, segs);
+    float w = 0;
+    for (auto &s : segs) {
+        w += font->width(s.text);
+    }
+    return w;
+}
+
 void Gui::renderChatMessages( const int screenHeight, unsigned int max, bool isChatting, Font* font ) {
 	//        if (minecraft.screen instanceof ChatScreen) {
 	//            max = 20;
@@ -784,7 +848,14 @@ void Gui::renderChatMessages( const int screenHeight, unsigned int max, bool isC
 				this->fill(x, y - 1, x + MAX_MESSAGE_WIDTH, y + 8, (alpha / 2) << 24);
 				glEnable(GL_BLEND);
 
-				font->drawShadow(msg, x, y, 0xffffff + (alpha << 24));
+				// special-case join/leave announcements
+		int baseColor = 0xffffff;
+		if (msg.find(" joined the game") != std::string::npos ||
+			msg.find(" left the game") != std::string::npos) {
+			baseColor = 0xffff00; // yellow
+		}
+		// replace previous logic; allow full colour tags now
+		Gui::drawColoredString(font, msg, x, y, alpha);
 			}
 		}
 	}

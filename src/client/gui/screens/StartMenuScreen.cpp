@@ -62,11 +62,8 @@ void StartMenuScreen::init()
 
 	copyright = "\xffMojang AB";//. Do not distribute!";
 
-	#ifdef PRE_ANDROID23
-		std::string versionString = Common::getGameVersionString("j");
-	#else
-		std::string versionString = Common::getGameVersionString();
-	#endif
+	// always show base version string, suffix was previously added for Android builds
+	std::string versionString = Common::getGameVersionString();
 
 	#ifdef DEMO_MODE
 	#ifdef __APPLE__
@@ -195,7 +192,7 @@ void StartMenuScreen::render( int xm, int ym, float a )
 	glColor4f2(1, 1, 1, 1);
 	if (Textures::isTextureIdValid(minecraft->textures->loadAndBindTexture("gui/logo/github.png")))
 		blit(2, height - 10, 0, 0, 8, 8, 256, 256);
-	drawString(font, "mschiller890/mcpe64", 12, height - 10, 0xffcccccc);
+	drawString(font, "Kolyah35/minecraft-pe-0.6.1", 12, height - 10, 0xffcccccc);
 
 	Screen::render(xm, ym, a);
 }
@@ -219,11 +216,11 @@ void StartMenuScreen::_updateLicense()
 
 void StartMenuScreen::mouseClicked(int x, int y, int buttonNum) {
 	const int logoX = 2;
-	const int logoW = 8 + 2 + font->width("mschiller890/mcpe64");
+	const int logoW = 8 + 2 + font->width("Kolyah35/minecraft-pe-0.6.1");
 	const int logoY = height - 10;
 	const int logoH = 10;
 	if (x >= logoX && x <= logoX + logoW && y >= logoY && y <= logoY + logoH)
-		minecraft->platform()->openURL("https://github.com/mschiller890/mcpe64");
+		minecraft->platform()->openURL("https://gitea.sffempire.ru/Kolyah35/minecraft-pe-0.6.1");
 	else
 		Screen::mouseClicked(x, y, buttonNum);
 }

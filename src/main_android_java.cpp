@@ -44,6 +44,11 @@ static void setupExternalPath(JNIEnv* env, MAIN_CLASS* app)
 	app->externalCacheStoragePath = str;
     LOGI("%s", str);
 
+    // same fix as the native entry point: make sure cwd is writable
+    if (chdir(str) != 0) {
+        LOGI("chdir to %s failed: %s", str, strerror(errno));
+    }
+
     env->ReleaseStringUTFChars((jstring)pathString, str);
 }
 

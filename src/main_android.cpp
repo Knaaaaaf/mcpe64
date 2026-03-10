@@ -41,6 +41,14 @@ static void setupExternalPath(struct android_app* state, MAIN_CLASS* app)
 	app->externalCacheStoragePath = str;
     LOGI("%s", str);
 
+    // ensure the process working directory is set to a writable location
+    // on Android the default cwd may be '/' which isn't writable.  By chdir'ing
+    // to the external storage path we make relative fopen calls (e.g. "options.txt")
+    // succeed and persist across launches, fixing the "options never save" bug.
+    if (chdir(str) != 0) {
+        LOGI("chdir to %s failed: %s", str, strerror(errno));
+    }
+
     env->ReleaseStringUTFChars((jstring)pathString, str);
 
     // We're done, detach!

@@ -226,8 +226,14 @@ if (-not $NoCpp -and -not $NoBuild) {
     }
     Push-Location "$junctionBase\project\android\jni"
     $env:NDK_MODULE_PATH = "$junctionBase\project\lib_projects"
-    & "$ndk\ndk-build.cmd" NDK_PROJECT_PATH="$junctionBase\project\android" APP_BUILD_SCRIPT="$junctionBase\project\android\jni\Android.mk" 2>&1 |
-        Where-Object { $_ -match "error:|warning:|libminecraftpe|In file included" }
+    # run ndk-build and capture everything; let user see full output for debugging
+    $ndkOutput = & "$ndk\ndk-build.cmd" NDK_PROJECT_PATH="$junctionBase\project\android" APP_BUILD_SCRIPT="$junctionBase\project\android\jni\Android.mk" 2>&1 | Tee-Object -Variable ndkOutput
+    # dump entire output for diagnosis
+    Write-Host "---- NDK BUILD OUTPUT BEGIN ----"
+    $ndkOutput | ForEach-Object { Write-Host $_ }
+    Write-Host "---- NDK BUILD OUTPUT END ----"
+    # optionally highlight errors/warnings afterwards
+    $ndkOutput | Where-Object { $_ -match "error:|warning:|libminecraftpe|In file included" }
     Pop-Location
     Assert-ExitCode "ndk-build"
     Copy-Item $libSrc $libDst -Force

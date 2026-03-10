@@ -183,7 +183,8 @@ const char* Options::GUI_SCALE[] = {
 	"options.guiScale.auto",
 	"options.guiScale.small",
 	"options.guiScale.normal",
-	"options.guiScale.large"
+	"options.guiScale.large",
+	"options.guiScale.larger"
 };
 
 void Options::update()
@@ -240,6 +241,10 @@ void Options::update()
 		// Graphics extras
 		if (key == OptionStrings::Graphics_Vsync)
 			readBool(value, vsync);
+		if (key == OptionStrings::Graphics_GUIScale) {
+			int v;
+			if (readInt(value, v)) guiScale = v % 5;
+		}
 		// Game
 		if (key == OptionStrings::Game_DifficultyLevel) {
 			readInt(value, difficulty);
@@ -313,6 +318,7 @@ void Options::save()
 	addOptionToSaveOutput(stringVec, OptionStrings::Controls_UseTouchJoypad, isJoyTouchArea);
 	addOptionToSaveOutput(stringVec, OptionStrings::Controls_FeedbackVibration, destroyVibration);
 	addOptionToSaveOutput(stringVec, OptionStrings::Graphics_Vsync, vsync);
+	addOptionToSaveOutput(stringVec, OptionStrings::Graphics_GUIScale, guiScale);
 // 
 // 	static const Option MUSIC;
 // 	static const Option SOUND;

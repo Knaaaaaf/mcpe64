@@ -1,6 +1,7 @@
 #include "OptionsFile.h"
 #include <stdio.h>
 #include <string.h>
+#include <platform/log.h>
 
 OptionsFile::OptionsFile() {
 #ifdef __APPLE__
@@ -19,6 +20,8 @@ void OptionsFile::save(const StringVector& settings) {
 			fprintf(pFile, "%s\n", it->c_str());
 		}
 		fclose(pFile);
+	} else {
+		LOGI("OptionsFile::save failed to open '%s' for writing: %s", settingsPath.c_str(), strerror(errno));
 	}
 }
 
@@ -41,6 +44,8 @@ StringVector OptionsFile::getOptionStrings() {
 			}
 		}
 		fclose(pFile);
+	} else {
+		LOGI("OptionsFile::getOptionStrings failed to open '%s' for reading: %s", settingsPath.c_str(), strerror(errno));
 	}
 	return returnVector;
 }
