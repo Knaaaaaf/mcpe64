@@ -15,7 +15,7 @@ I've done some bad and pointless changes to the code so if someone could improve
 - [ ] Controller support
 - [ ] Minecraft server hosting
 - [x] Android build support
-    - [ ] Touch control improvements
+    - [x] Touch control improvements
     - [ ] Screen fixes
 - [x] Better F3
 - [ ] Performance optimalizations
