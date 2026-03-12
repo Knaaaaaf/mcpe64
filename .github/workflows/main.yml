@@ -10,9 +10,13 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
-
     - name: Checkout repository
       uses: actions/checkout@v4
+
+    - name: Install legacy libraries
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libncurses5 libstdc++6 unzip wget zip openjdk-17-jdk
 
     - name: Install Java
       uses: actions/setup-java@v4
@@ -38,10 +42,7 @@ jobs:
       run: |
         export NDK_MODULE_PATH=$GITHUB_WORKSPACE/project/lib_projects
         cd project/android/jni
-        $NDK/ndk-build \
-        NDK_PROJECT_PATH=../ \
-        APP_BUILD_SCRIPT=Android.mk \
-        APP_ABI=armeabi-v7a
+        $NDK/ndk-build NDK_PROJECT_PATH=../ APP_BUILD_SCRIPT=Android.mk APP_ABI=armeabi-v7a
 
     - name: Compile Java
       run: |
@@ -68,7 +69,7 @@ jobs:
 
     - name: Package APK
       run: |
-        mkdir build/apk
+        mkdir -p build/apk
 
         aapt package -f \
         -M project/android_java/AndroidManifest.xml \
@@ -79,6 +80,7 @@ jobs:
         cd build
         zip -u apk/mcpe-unsigned.apk classes.dex
         zip -r apk/mcpe-unsigned.apk ../project/android/libs/armeabi-v7a
+        cd ..
 
     - name: Create debug keystore
       run: |
