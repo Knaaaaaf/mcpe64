@@ -6,9 +6,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
-    - name: Checkout
+
+    - name: Checkout repository
       uses: actions/checkout@v4
 
     - name: Install Java
@@ -20,7 +23,7 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Install build tools
+    - name: Install Android platform
       run: |
         sdkmanager "platforms;android-21"
         sdkmanager "build-tools;35.0.0"
@@ -31,22 +34,75 @@ jobs:
         unzip android-ndk-r14b-linux-x86_64.zip
         echo "NDK=$PWD/android-ndk-r14b" >> $GITHUB_ENV
 
-    - name: Build native library (32bit)
+    - name: Build native library
       run: |
+        export NDK_MODULE_PATH=$GITHUB_WORKSPACE/project/lib_projects
         cd project/android/jni
-        $NDK/ndk-build APP_ABI=armeabi-v7a
+        $NDK/ndk-build \
+        NDK_PROJECT_PATH=../ \
+        APP_BUILD_SCRIPT=Android.mk \
+        APP_ABI=armeabi-v7a
 
-    - name: Build APK
+    - name: Compile Java
       run: |
-        mkdir build
+        mkdir -p build/gen build/classes
+
         aapt package -f \
         -M project/android_java/AndroidManifest.xml \
         -S project/android_java/res \
         -I $ANDROID_HOME/platforms/android-21/android.jar \
-        -F build/minecraftpe.apk
+        -J build/gen
+
+        javac -source 8 -target 8 \
+        -cp $ANDROID_HOME/platforms/android-21/android.jar \
+        -d build/classes \
+        $(find project/android_java/src -name "*.java") \
+        $(find build/gen -name "*.java")
+
+    - name: Convert to dex
+      run: |
+        $ANDROID_HOME/build-tools/35.0.0/d8 \
+        --min-api 21 \
+        --output build \
+        $(find build/classes -name "*.class")
+
+    - name: Package APK
+      run: |
+        mkdir build/apk
+
+        aapt package -f \
+        -M project/android_java/AndroidManifest.xml \
+        -S project/android_java/res \
+        -I $ANDROID_HOME/platforms/android-21/android.jar \
+        -F build/apk/mcpe-unsigned.apk
+
+        cd build
+        zip -u apk/mcpe-unsigned.apk classes.dex
+        zip -r apk/mcpe-unsigned.apk ../project/android/libs/armeabi-v7a
+
+    - name: Create debug keystore
+      run: |
+        keytool -genkeypair \
+        -keystore debug.keystore \
+        -storepass android \
+        -keypass android \
+        -alias androiddebugkey \
+        -keyalg RSA \
+        -keysize 2048 \
+        -validity 10000 \
+        -dname "CN=Android Debug,O=Android,C=US"
+
+    - name: Sign APK
+      run: |
+        $ANDROID_HOME/build-tools/35.0.0/apksigner sign \
+        --ks debug.keystore \
+        --ks-pass pass:android \
+        --key-pass pass:android \
+        --out build/mcpe.apk \
+        build/apk/mcpe-unsigned.apk
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: minecraftpe-apk
-        path: build/minecraftpe.apk
+        name: mcpe-apk
+        path: build/mcpe.apk
