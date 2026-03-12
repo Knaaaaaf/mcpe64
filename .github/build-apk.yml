@@ -1,0 +1,52 @@
+name: Build MCPE APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Install Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: 17
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Install build tools
+      run: |
+        sdkmanager "platforms;android-21"
+        sdkmanager "build-tools;35.0.0"
+
+    - name: Download NDK r14b
+      run: |
+        wget https://dl.google.com/android/repository/android-ndk-r14b-linux-x86_64.zip
+        unzip android-ndk-r14b-linux-x86_64.zip
+        echo "NDK=$PWD/android-ndk-r14b" >> $GITHUB_ENV
+
+    - name: Build native library (32bit)
+      run: |
+        cd project/android/jni
+        $NDK/ndk-build APP_ABI=armeabi-v7a
+
+    - name: Build APK
+      run: |
+        mkdir build
+        aapt package -f \
+        -M project/android_java/AndroidManifest.xml \
+        -S project/android_java/res \
+        -I $ANDROID_HOME/platforms/android-21/android.jar \
+        -F build/minecraftpe.apk
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: minecraftpe-apk
+        path: build/minecraftpe.apk
